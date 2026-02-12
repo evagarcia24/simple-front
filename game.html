@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partida - RPG Juego de Rol</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Roboto:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+    <!-- Top Bar -->
+    <div class="topbar">
+        <a href="dashboard.html" class="brand"><i class="fas fa-landmark"></i> RPG Burocracia</a>
+        <div class="nav-links">
+            <a href="dashboard.html"><i class="fas fa-arrow-left"></i> Volver al Dashboard</a>
+        </div>
+    </div>
+
+    <div class="container container-wide">
+        <div class="panel">
+
+            <!-- Game Info Header -->
+            <div class="panel-header">
+                <i class="fas fa-gamepad"></i>
+                <h1 id="gameName">Cargando partida...</h1>
+            </div>
+
+            <!-- Status Bar -->
+            <div class="game-info" id="gameInfoBar">
+                <div class="info-item">
+                    <div class="label">Estado</div>
+                    <div class="value" id="gameStatus">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Capítulo</div>
+                    <div class="value" id="gameChapter">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Fase</div>
+                    <div class="value" id="gamePhase">—</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Encuentro</div>
+                    <div class="value" id="gameEncounter">—</div>
+                </div>
+            </div>
+
+            <!-- Heroes -->
+            <h3 style="font-size:14px;margin-bottom:8px;"><i class="fas fa-users" style="color:var(--gold)"></i> Héroes
+            </h3>
+            <div class="heroes-bar" id="heroesBar">
+                <p class="loading">Cargando</p>
+            </div>
+
+            <!-- Villains -->
+            <h3 style="font-size:14px;margin-bottom:8px;margin-top:10px;"><i class="fas fa-skull"
+                    style="color:var(--danger)"></i> Villanos</h3>
+            <div class="heroes-bar" id="villainsBar">
+                <p style="color:var(--text-muted);font-size:13px;">—</p>
+            </div>
+
+            <!-- Main Action Area -->
+            <div id="actionArea" class="mt-20">
+                <p class="loading">Cargando estado del juego</p>
+            </div>
+
+            <!-- Result Messages -->
+            <div id="resultArea" class="hidden"></div>
+
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const runId = params.get('runId');
+        let gameState = null;
+
+        if (!runId) {
+            alert('No se proporcionó runId');
+            window.location.href = 'dashboard.html';
+        }
+
+        async function init() {
+            // Check auth
+            try { await api.me(); } catch { window.location.href = 'login.html'; return; }
+            await refreshGameState();
+        }
+
+        async function refreshGameState() {
+            try {
+                gameState = await api.getGameRun(runId);
+                renderGameState();
+            } catch (err) {
+                document.getElementById('actionArea').innerHTML =
+                    `<div class="encounter-box"><h3 style="color:var(--danger)">Error al cargar la partida</h3>
+                 <p>${typeof err.message === 'string' ? esc(err.message) : 'Error desconocido'}</p></div>`;
+            }
+        }
+
+        function renderGameState() {
+            const s = gameState;
+
+            // Header
+            document.getElementById('gameName').textContent = s.gameDefinitionName || 'Partida';
+            document.getElementById('gameStatus').textContent = translateStatus(s.status);
+            document.getElementById('gameChapter').textContent = s.currentChapterNumber ?? '—';
+            document.getElementById('gamePhase').textContent = translatePhase(s.currentPhaseType) || '—';
+            document.getElementById('gameEncounter').textContent = s.currentEncounterIndex != null ? (s.currentEncounterIndex + 1) : '—';
+
+            // Heroes
+            const heroesBar = document.getElementById('heroesBar');
+            if (s.heroes && s.heroes.length > 0) {
+                heroesBar.innerHTML = s.heroes.map(h => `
+                <div class="hero-badge">
+                    <span class="hero-name"><i class="fas fa-user-ninja"></i> ${esc(h.name || 'Héroe ' + h.slot)}</span>
+                    <span class="hero-hp ${h.currentHp <= 0 ? 'dead' : ''}">
+                        ❤️ ${h.currentHp ?? '?'} / ${h.maxHp ?? '?'} HP
+                    </span>
+                    <span style="font-size:11px;color:var(--text-muted)">⚔️ ATK: ${h.attack ?? '?'} | 🛡️ DEF: ${h.defense ?? '?'}</span>
+                </div>
+            `).join('');
+            } else {
+                heroesBar.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Sin héroes</p>';
+            }
+
+            // Villains
+            const villainsBar = document.getElementById('villainsBar');
+            if (s.villains && s.villains.length > 0) {
+                villainsBar.innerHTML = s.villains.map(v => `
+                <div class="hero-badge">
+                    <span class="hero-name" style="color:var(--danger)"><i class="fas fa-skull"></i> ${esc(v.name || 'Villano')}</span>
+                    <span class="hero-hp ${v.currentHp <= 0 ? 'dead' : ''}">
+                        ❤️ ${v.currentHp ?? '?'} / ${v.maxHp ?? '?'} HP
+                    </span>
+                </div>
+            `).join('');
+            } else {
+                villainsBar.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">—</p>';
+            }
+
+            // Action area
+            renderActionArea();
+        }
+
+        function renderActionArea() {
+            const area = document.getElementById('actionArea');
+            const s = gameState;
+
+            // Game finished?
+            if (s.status === 'COMPLETED' || s.status === 'GAME_OVER') {
+                area.innerHTML = `
+                <div class="encounter-box">
+                    <h3>${s.status === 'COMPLETED' ? '🏆 ¡Victoria!' : '💀 Derrota'}</h3>
+                    <p>${s.status === 'COMPLETED'
+                        ? '¡Has completado toda la aventura! El trámite ha sido superado.'
+                        : 'Todos tus héroes han caído. El papeleo es implacable.'}</p>
+                    <a href="dashboard.html" class="btn mt-10"><i class="fas fa-home"></i> Volver al Dashboard</a>
+                </div>`;
+                return;
+            }
+
+            const phase = s.currentPhaseType;
+
+            if (phase === 'ENCOUNTER' || phase === 'ENCOUNTER_PENDING') {
+                renderEncounterPhase(area);
+            } else if (phase === 'CLASH' || phase === 'CLASH_ROUND' || phase === 'CLASH_INITIATIVE' || phase === 'CLASH_PENDING') {
+                renderClashPhase(area);
+            } else {
+                area.innerHTML = `
+                <div class="encounter-box">
+                    <h3><i class="fas fa-hourglass-half"></i> Fase: ${esc(phase || 'Desconocida')}</h3>
+                    <p>Estado actual de la partida.</p>
+                    <button class="btn" onclick="refreshGameState()"><i class="fas fa-sync"></i> Actualizar</button>
+                </div>`;
+            }
+        }
+
+        // --- ENCOUNTER PHASE ---
+        async function renderEncounterPhase(area) {
+            area.innerHTML = '<p class="loading">Cargando encuentro</p>';
+
+            try {
+                const enc = await api.getCurrentEncounter(runId);
+                area.innerHTML = `
+                <div class="encounter-box">
+                    <h3><i class="fas fa-scroll"></i> ${esc(enc.encounterName || enc.name || 'Evento')}</h3>
+                    <p>${esc(enc.description || enc.narration || 'Un evento ocurre en tu camino...')}</p>
+                    <div class="encounter-actions">
+                        <button class="btn btn-success" onclick="encounterInteract()">
+                            <i class="fas fa-hand-point-up"></i> Interactuar
+                        </button>
+                        <button class="btn btn-danger" onclick="encounterAvoid()">
+                            <i class="fas fa-running"></i> Evitar
+                        </button>
+                    </div>
+                </div>`;
+            } catch (err) {
+                const msg = typeof err.message === 'string' ? err.message : '';
+                // If no encounter available, try advancing
+                area.innerHTML = `
+                <div class="encounter-box">
+                    <h3><i class="fas fa-question-circle"></i> Encuentro</h3>
+                    <p>${esc(msg) || 'No hay encuentro disponible en este momento.'}</p>
+                    <button class="btn" onclick="refreshGameState()"><i class="fas fa-sync"></i> Actualizar</button>
+                </div>`;
+            }
+        }
+
+        async function encounterInteract() {
+            const area = document.getElementById('resultArea');
+            area.classList.remove('hidden');
+            area.innerHTML = '<p class="loading">Resolviendo...</p>';
+
+            try {
+                const result = await api.resolveEncounterInteract(runId);
+                area.innerHTML = `
+                <div class="result-box">
+                    <h3>${getResultIcon(result.resolutionType)} Resultado: ${translateResolution(result.resolutionType)}</h3>
+                    <p style="color:var(--text-muted);margin-top:8px;">${esc(result.description || result.narration || '')}</p>
+                    <p style="margin-top:5px;">🎲 Dado: <b>${result.roll ?? '?'}</b></p>
+                </div>`;
+                setTimeout(refreshGameState, 1500);
+            } catch (err) {
+                area.innerHTML = `<div class="result-box" style="color:var(--danger)">${typeof err.message === 'string' ? esc(err.message) : 'Error'}</div>`;
+                setTimeout(refreshGameState, 2000);
+            }
+        }
+
+        async function encounterAvoid() {
+            const area = document.getElementById('resultArea');
+            area.classList.remove('hidden');
+            area.innerHTML = '<p class="loading">Evitando...</p>';
+
+            try {
+                const result = await api.resolveEncounterAvoid(runId);
+                area.innerHTML = `
+                <div class="result-box">
+                    <h3>🏃 Resultado: ${translateResolution(result.resolutionType)}</h3>
+                    <p style="color:var(--text-muted);margin-top:8px;">${esc(result.description || result.narration || 'Has evitado el evento.')}</p>
+                </div>`;
+                setTimeout(refreshGameState, 1500);
+            } catch (err) {
+                area.innerHTML = `<div class="result-box" style="color:var(--danger)">${typeof err.message === 'string' ? esc(err.message) : 'Error'}</div>`;
+                setTimeout(refreshGameState, 2000);
+            }
+        }
+
+        // --- CLASH PHASE ---
+        function renderClashPhase(area) {
+            area.innerHTML = `
+            <div class="encounter-box">
+                <h3><i class="fas fa-swords" style="color:var(--danger)"></i> ⚔️ ¡Combate contra el Villano!</h3>
+                <p>Es hora de luchar contra el monstruo final del capítulo.</p>
+                <div class="encounter-actions">
+                    <button class="btn btn-info" onclick="clashRollInitiative()">
+                        <i class="fas fa-dice"></i> Tirar Iniciativa
+                    </button>
+                    <button class="btn btn-danger" onclick="clashResolveRound()">
+                        <i class="fas fa-fist-raised"></i> Resolver Ronda
+                    </button>
+                    <button class="btn btn-success" onclick="clashAdvance()">
+                        <i class="fas fa-forward"></i> Avanzar
+                    </button>
+                </div>
+            </div>`;
+
+            // Show clash rounds history
+            if (gameState.clashRounds && gameState.clashRounds.length > 0) {
+                const rounds = gameState.clashRounds.map((r, i) =>
+                    `<div style="padding:5px;margin:3px 0;background:rgba(255,255,255,0.03);border-radius:4px;font-size:13px;">
+                    Ronda ${i + 1}: ${esc(JSON.stringify(r).substring(0, 80))}...
+                </div>`
+                ).join('');
+                area.innerHTML += `<div class="mt-10"><h4 style="font-size:13px;color:var(--text-muted);">Historial de rondas:</h4>${rounds}</div>`;
+            }
+        }
+
+        async function clashRollInitiative() {
+            const area = document.getElementById('resultArea');
+            area.classList.remove('hidden');
+            area.innerHTML = '<p class="loading">Tirando iniciativa...</p>';
+            try {
+                const result = await api.rollClashInitiative(runId);
+                area.innerHTML = `<div class="result-box"><h3>🎲 Iniciativa</h3><pre style="color:var(--text-muted);font-size:12px;text-align:left;white-space:pre-wrap;">${esc(JSON.stringify(result, null, 2))}</pre></div>`;
+                setTimeout(refreshGameState, 1500);
+            } catch (err) {
+                area.innerHTML = `<div class="result-box" style="color:var(--danger)">${typeof err.message === 'string' ? esc(err.message) : 'Error'}</div>`;
+            }
+        }
+
+        async function clashResolveRound() {
+            const area = document.getElementById('resultArea');
+            area.classList.remove('hidden');
+            area.innerHTML = '<p class="loading">Resolviendo ronda...</p>';
+            try {
+                const result = await api.resolveClashRound(runId);
+                area.innerHTML = `<div class="result-box"><h3>⚔️ Resultado de la Ronda</h3><pre style="color:var(--text-muted);font-size:12px;text-align:left;white-space:pre-wrap;">${esc(JSON.stringify(result, null, 2))}</pre></div>`;
+                setTimeout(refreshGameState, 1500);
+            } catch (err) {
+                area.innerHTML = `<div class="result-box" style="color:var(--danger)">${typeof err.message === 'string' ? esc(err.message) : 'Error'}</div>`;
+            }
+        }
+
+        async function clashAdvance() {
+            const area = document.getElementById('resultArea');
+            area.classList.remove('hidden');
+            area.innerHTML = '<p class="loading">Avanzando...</p>';
+            try {
+                await api.advanceAfterClash(runId);
+                area.innerHTML = `<div class="result-box"><h3>✅ Avanzando al siguiente capítulo</h3></div>`;
+                setTimeout(refreshGameState, 1000);
+            } catch (err) {
+                area.innerHTML = `<div class="result-box" style="color:var(--danger)">${typeof err.message === 'string' ? esc(err.message) : 'Error'}</div>`;
+            }
+        }
+
+        // --- Helpers ---
+        function translateStatus(s) {
+            const map = { 'IN_PROGRESS': '▶️ En curso', 'COMPLETED': '🏆 Completado', 'GAME_OVER': '💀 Derrota' };
+            return map[s] || s || '—';
+        }
+
+        function translatePhase(p) {
+            const map = {
+                'ENCOUNTER': '📜 Encuentro',
+                'ENCOUNTER_PENDING': '📜 Encuentro',
+                'CLASH': '⚔️ Combate',
+                'CLASH_ROUND': '⚔️ Combate - Ronda',
+                'CLASH_INITIATIVE': '⚔️ Combate - Iniciativa',
+                'CLASH_PENDING': '⚔️ Combate'
+            };
+            return map[p] || p;
+        }
+
+        function translateResolution(r) {
+            const map = { 'FAILURE': '❌ Fracaso', 'NEUTRAL': '😐 Neutral', 'SUCCESS': '✅ Éxito', 'GREAT_SUCCESS': '🌟 Gran Éxito' };
+            return map[r] || r || '?';
+        }
+
+        function getResultIcon(r) {
+            const map = { 'FAILURE': '❌', 'NEUTRAL': '😐', 'SUCCESS': '✅', 'GREAT_SUCCESS': '🌟' };
+            return map[r] || '❓';
+        }
+
+        function esc(str) {
+            if (!str) return '';
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

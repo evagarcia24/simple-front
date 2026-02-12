@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - RPG Juego de Rol</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Roboto:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+    <!-- Top Bar -->
+    <div class="topbar">
+        <a href="dashboard.html" class="brand"><i class="fas fa-landmark"></i> RPG Burocracia</a>
+        <div class="nav-links">
+            <span class="user-name" id="userName"></span>
+            <a href="dashboard.html"><i class="fas fa-home"></i> Inicio</a>
+            <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Salir</button>
+        </div>
+    </div>
+
+    <div class="container container-wide">
+
+        <!-- Sección: Mis Héroes -->
+        <div class="section">
+            <h2 class="section-title"><i class="fas fa-shield-halved"></i> Mis Héroes</h2>
+            <div id="heroesGrid" class="card-grid">
+                <p class="loading" id="heroesLoading">Cargando héroes</p>
+            </div>
+            <div class="mt-10">
+                <button class="btn btn-success btn-small" onclick="showCreateHero()">
+                    <i class="fas fa-plus"></i> Crear Héroe
+                </button>
+            </div>
+
+            <!-- Formulario crear héroe (hidden) -->
+            <div id="createHeroForm" class="hidden mt-10 panel" style="max-width:400px;">
+                <h3 style="margin-bottom:12px;"><i class="fas fa-plus-circle"></i> Nuevo Héroe</h3>
+                <div class="form-group">
+                    <label for="heroName"><i class="fas fa-tag"></i> Nombre</label>
+                    <input type="text" id="heroName" placeholder="Nombre del héroe" required>
+                </div>
+                <div class="form-group">
+                    <label for="heroRace"><i class="fas fa-dna"></i> Raza</label>
+                    <select id="heroRace">
+                        <option value="">Cargando razas...</option>
+                    </select>
+                </div>
+                <button class="btn btn-success btn-small" onclick="createHero()">
+                    <i class="fas fa-check"></i> Crear
+                </button>
+                <button class="btn btn-small" onclick="hideCreateHero()">Cancelar</button>
+                <div id="heroError" class="msg-error"><i class="fas fa-exclamation-circle"></i> <span
+                        id="heroErrorText"></span></div>
+            </div>
+        </div>
+
+        <!-- Sección: Iniciar Partida -->
+        <div class="section">
+            <h2 class="section-title"><i class="fas fa-gamepad"></i> Iniciar Partida</h2>
+            <p style="color:var(--text-muted); font-size:14px; margin-bottom:10px;">
+                Selecciona un pack de aventura y entre 2 y 5 héroes para comenzar.
+            </p>
+
+            <div class="form-group" style="max-width:400px;">
+                <label for="packSelect"><i class="fas fa-box"></i> Pack de Aventura</label>
+                <select id="packSelect">
+                    <option value="">Cargando packs...</option>
+                </select>
+            </div>
+
+            <h3 style="font-size:14px; margin-bottom:8px; color:var(--gold);">
+                <i class="fas fa-users"></i> Héroes del Sistema (predefinidos)
+            </h3>
+            <div id="systemHeroesGrid" class="card-grid">
+                <p class="loading" id="sysHeroesLoading">Cargando</p>
+            </div>
+
+            <h3 style="font-size:14px; margin-top:15px; margin-bottom:8px; color:var(--gold);">
+                <i class="fas fa-user-shield"></i> Mis Héroes (propios)
+            </h3>
+            <div id="userHeroesSelectGrid" class="card-grid">
+                <p style="color:var(--text-muted); font-size:13px;">Crea héroes arriba para poder seleccionarlos aquí.
+                </p>
+            </div>
+
+            <div class="mt-20">
+                <span id="selectedCount" style="color:var(--text-muted);font-size:13px;">0 seleccionados</span>
+                <button class="btn mt-10" id="startGameBtn" onclick="startGame()">
+                    <i class="fas fa-play"></i> Iniciar Partida
+                </button>
+                <div id="gameError" class="msg-error"><i class="fas fa-exclamation-circle"></i> <span
+                        id="gameErrorText"></span></div>
+            </div>
+        </div>
+
+        <!-- Sección: Admin (solo si ADMIN) -->
+        <div class="section hidden" id="adminSection">
+            <h2 class="section-title"><i class="fas fa-user-shield"></i> Gestión de Usuarios (Admin)</h2>
+            <div id="usersGrid" class="card-grid"></div>
+        </div>
+
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        let currentUser = null;
+        let selectedSystemHeroes = new Set();
+        let selectedUserHeroes = new Set();
+
+        // --- Init ---
+        async function init() {
+            try {
+                currentUser = await api.me();
+                localStorage.setItem('user', JSON.stringify(currentUser));
+            } catch {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            document.getElementById('userName').textContent = currentUser.name;
+
+            loadMyHeroes();
+            loadPacks();
+            loadSystemHeroes();
+            loadRaces();
+
+            if (currentUser.role === 'ADMIN') {
+                document.getElementById('adminSection').classList.remove('hidden');
+                loadUsers();
+            }
+        }
+
+        // --- Logout ---
+        async function logout() {
+            try { await api.logout(); } catch { }
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // --- My Heroes ---
+        async function loadMyHeroes() {
+            const grid = document.getElementById('heroesGrid');
+            try {
+                const heroes = await api.getUserHeroes(currentUser.userId);
+                document.getElementById('heroesLoading').remove();
+                if (heroes.length === 0) {
+                    grid.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">No tienes héroes todavía.</p>';
+                } else {
+                    grid.innerHTML = heroes.map(h => `
+                    <div class="card">
+                        <h3><i class="fas fa-user-ninja"></i> ${esc(h.name)}</h3>
+                        <p>Estado: ${h.status}</p>
+                        <div class="card-actions">
+                            <button class="btn btn-danger btn-small" onclick="deleteHero('${h.characterUserHeroId}')">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                }
+                // Also refresh user heroes selection
+                renderUserHeroSelection(heroes);
+            } catch (err) {
+                grid.innerHTML = '<p style="color:var(--danger)">Error al cargar héroes</p>';
+            }
+        }
+
+        function renderUserHeroSelection(heroes) {
+            const grid = document.getElementById('userHeroesSelectGrid');
+            if (heroes.length === 0) {
+                grid.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Crea héroes arriba primero.</p>';
+                return;
+            }
+            grid.innerHTML = heroes.filter(h => h.status === 'ACTIVE').map(h => `
+            <div class="card selectable ${selectedUserHeroes.has(h.characterUserHeroId) ? 'selected' : ''}"
+                 onclick="toggleUserHero('${h.characterUserHeroId}', this)">
+                <h3><i class="fas fa-user-ninja"></i> ${esc(h.name)}</h3>
+            </div>
+        `).join('');
+        }
+
+        // --- Create Hero ---
+        function showCreateHero() { document.getElementById('createHeroForm').classList.remove('hidden'); }
+        function hideCreateHero() { document.getElementById('createHeroForm').classList.add('hidden'); }
+
+        async function loadRaces() {
+            try {
+                const races = await api.getUserRaces();
+                const sel = document.getElementById('heroRace');
+                sel.innerHTML = '<option value="">-- Selecciona raza --</option>' +
+                    races.map(r => `<option value="${r.raceId}">${esc(r.name || r.raceId)}</option>`).join('');
+            } catch { }
+        }
+
+        async function createHero() {
+            const name = document.getElementById('heroName').value.trim();
+            const raceId = document.getElementById('heroRace').value;
+            const errDiv = document.getElementById('heroError');
+            const errText = document.getElementById('heroErrorText');
+            errDiv.classList.remove('visible');
+
+            if (!name || !raceId) {
+                errText.textContent = 'Rellena nombre y raza.';
+                errDiv.classList.add('visible');
+                return;
+            }
+            try {
+                await api.createUserHero(raceId, name);
+                hideCreateHero();
+                document.getElementById('heroName').value = '';
+                await loadMyHeroes();
+            } catch (err) {
+                errText.textContent = typeof err.message === 'string' ? err.message : 'Error al crear héroe';
+                errDiv.classList.add('visible');
+            }
+        }
+
+        async function deleteHero(id) {
+            if (!confirm('¿Eliminar este héroe?')) return;
+            try {
+                await api.deleteUserHero(id);
+                selectedUserHeroes.delete(id);
+                await loadMyHeroes();
+                updateSelectedCount();
+            } catch { }
+        }
+
+        // --- Packs ---
+        async function loadPacks() {
+            try {
+                const packs = await api.getPacks();
+                const sel = document.getElementById('packSelect');
+                sel.innerHTML = '<option value="">-- Selecciona pack --</option>' +
+                    packs.map(p => `<option value="${p.packId}">${esc(p.description || p.packId)}</option>`).join('');
+            } catch { }
+        }
+
+        // --- System Heroes ---
+        async function loadSystemHeroes() {
+            const grid = document.getElementById('systemHeroesGrid');
+            try {
+                const heroes = await api.getSystemHeroes();
+                document.getElementById('sysHeroesLoading').remove();
+                grid.innerHTML = heroes.map(h => `
+                <div class="card selectable ${selectedSystemHeroes.has(h.characterSystemHeroId) ? 'selected' : ''}"
+                     onclick="toggleSystemHero('${h.characterSystemHeroId}', this)">
+                    <h3><i class="fas fa-chess-knight"></i> ${esc(h.name)}</h3>
+                </div>
+            `).join('');
+            } catch (err) {
+                grid.innerHTML = '<p style="color:var(--danger)">Error al cargar héroes del sistema</p>';
+            }
+        }
+
+        // --- Selection ---
+        function toggleSystemHero(id, el) {
+            if (selectedSystemHeroes.has(id)) {
+                selectedSystemHeroes.delete(id);
+                el.classList.remove('selected');
+            } else {
+                selectedSystemHeroes.add(id);
+                el.classList.add('selected');
+            }
+            updateSelectedCount();
+        }
+
+        function toggleUserHero(id, el) {
+            if (selectedUserHeroes.has(id)) {
+                selectedUserHeroes.delete(id);
+                el.classList.remove('selected');
+            } else {
+                selectedUserHeroes.add(id);
+                el.classList.add('selected');
+            }
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const total = selectedSystemHeroes.size + selectedUserHeroes.size;
+            document.getElementById('selectedCount').textContent = total + ' seleccionado(s) (mín 2, máx 5)';
+        }
+
+        // --- Start Game ---
+        async function startGame() {
+            const errDiv = document.getElementById('gameError');
+            const errText = document.getElementById('gameErrorText');
+            errDiv.classList.remove('visible');
+
+            const packId = document.getElementById('packSelect').value;
+            if (!packId) {
+                errText.textContent = 'Selecciona un pack de aventura.';
+                errDiv.classList.add('visible');
+                return;
+            }
+
+            const total = selectedSystemHeroes.size + selectedUserHeroes.size;
+            if (total < 2 || total > 5) {
+                errText.textContent = 'Debes seleccionar entre 2 y 5 héroes.';
+                errDiv.classList.add('visible');
+                return;
+            }
+
+            try {
+                const gameDef = await api.createGameDefinition(
+                    packId,
+                    [...selectedSystemHeroes],
+                    [...selectedUserHeroes]
+                );
+                const gameRun = await api.createGameRun(gameDef.gameDefinitionId);
+                const runId = gameRun.runId;
+                window.location.href = 'game.html?runId=' + runId;
+            } catch (err) {
+                errText.textContent = typeof err.message === 'string' ? err.message : 'Error al crear partida';
+                errDiv.classList.add('visible');
+            }
+        }
+
+        // --- Admin: Users ---
+        async function loadUsers() {
+            const grid = document.getElementById('usersGrid');
+            try {
+                const users = await api.getUsers();
+                grid.innerHTML = users.map(u => `
+                <div class="card">
+                    <h3><i class="fas fa-user"></i> ${esc(u.name)}</h3>
+                    <p><i class="fas fa-envelope"></i> ${esc(u.email)}</p>
+                    <p>Rol: <b>${u.role}</b></p>
+                    <p>Baneado: ${u.banned ? '🔴 Sí' : '🟢 No'}</p>
+                </div>
+            `).join('');
+            } catch { }
+        }
+
+        // --- Utils ---
+        function esc(str) {
+            if (!str) return '';
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

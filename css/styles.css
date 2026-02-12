@@ -1,0 +1,640 @@
+@charset "UTF-8";
+
+/* ============================
+   VARIABLES GLOBALES RPG
+============================ */
+:root {
+    --gold: #f1c40f;
+    --gold-soft: #ffdd66;
+    --gold-glow: rgba(241, 196, 15, 0.4);
+    --dark-bg: #0a0a0a;
+    --panel-bg: rgba(20, 20, 20, 0.85);
+    --panel-border: rgba(255, 215, 0, 0.3);
+    --input-bg: #111;
+    --input-border: #444;
+    --text-light: #fff;
+    --text-muted: #aaa;
+    --danger: #ff4d4d;
+    --success: #2ecc71;
+    --info: #3498db;
+    --radius: 8px;
+    --shadow-gold: 0 0 25px rgba(255, 215, 0, 0.2);
+}
+
+/* ============================
+   RESET
+============================ */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ============================
+   BODY
+============================ */
+body {
+    font-family: 'Roboto', sans-serif;
+    background: var(--dark-bg);
+    color: var(--text-light);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    overflow-y: auto;
+}
+
+/* ============================
+   OVERLAY DE FONDO
+============================ */
+.background-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 10, 0.9);
+    z-index: 0;
+}
+
+/* ============================
+   TIPOGRAFÍA RPG
+============================ */
+h1, h2, h3, h4 {
+    font-family: 'Cinzel', serif;
+    color: var(--gold);
+    letter-spacing: 1px;
+}
+
+/* ============================
+   CONTENEDOR CENTRADO
+============================ */
+.container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 460px;
+    padding: 20px;
+    margin: 40px auto;
+}
+
+.container-wide {
+    max-width: 900px;
+}
+
+/* ============================
+   PANEL (caja con borde dorado)
+============================ */
+.panel {
+    background: var(--panel-bg);
+    padding: 35px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-gold);
+    border: 1px solid var(--panel-border);
+    animation: fadeIn 0.6s ease-out;
+}
+
+/* ============================
+   HEADER (icono + titulo)
+============================ */
+.panel-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.panel-header i {
+    font-size: 48px;
+    color: var(--gold);
+    text-shadow: 0 0 10px var(--gold);
+}
+
+.panel-header h1 {
+    font-size: 24px;
+    margin-top: 10px;
+    letter-spacing: 2px;
+}
+
+.panel-header .subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 5px;
+}
+
+/* ============================
+   FORMULARIOS
+============================ */
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: var(--gold);
+}
+
+.form-group label i {
+    margin-right: 6px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--text-light);
+    font-size: 14px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input:focus, select:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 8px var(--gold-glow);
+    outline: none;
+}
+
+.password-wrapper {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--gold);
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* ============================
+   BOTONES
+============================ */
+.btn {
+    display: inline-block;
+    padding: 10px 18px;
+    background: transparent;
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    color: var(--gold);
+    text-decoration: none;
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.25s, color 0.25s, box-shadow 0.25s;
+}
+
+.btn:hover {
+    background: var(--gold);
+    color: #000;
+    box-shadow: 0 0 12px var(--gold-soft);
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.btn-danger {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.btn-danger:hover {
+    background: var(--danger);
+    color: #fff;
+    box-shadow: 0 0 12px var(--danger);
+}
+
+.btn-success {
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.btn-success:hover {
+    background: var(--success);
+    color: #fff;
+    box-shadow: 0 0 12px var(--success);
+}
+
+.btn-info {
+    border-color: var(--info);
+    color: var(--info);
+}
+
+.btn-info:hover {
+    background: var(--info);
+    color: #fff;
+    box-shadow: 0 0 12px var(--info);
+}
+
+/* ============================
+   MENSAJES ERROR / ÉXITO
+============================ */
+.msg-error {
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    color: var(--danger);
+    font-weight: bold;
+    font-size: 14px;
+    display: none;
+}
+
+.msg-error.visible {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    align-items: center;
+}
+
+.msg-success {
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    color: var(--success);
+    font-weight: bold;
+    font-size: 14px;
+    display: none;
+}
+
+.msg-success.visible {
+    display: block;
+}
+
+/* ============================
+   SEPARADOR
+============================ */
+.separator {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+}
+
+.separator span {
+    background: var(--panel-bg);
+    padding: 0 10px;
+    color: var(--text-muted);
+    position: relative;
+    z-index: 1;
+}
+
+.separator::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--input-border);
+}
+
+/* ============================
+   SECCIÓN REGISTRO / LINK
+============================ */
+.link-section {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.link-section p {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+/* ============================
+   FOOTER
+============================ */
+.panel-footer {
+    margin-top: 25px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    opacity: 0.6;
+}
+
+/* ============================
+   CHECKBOX TERMS
+============================ */
+.form-options {
+    margin: 15px 0;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.checkbox-container input[type="checkbox"] {
+    width: auto;
+    accent-color: var(--gold);
+}
+
+/* ============================
+   MODAL
+============================ */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.visible {
+    display: flex;
+}
+
+.modal-content {
+    background: #1e1e1e;
+    padding: 25px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 600px;
+    color: white;
+    font-family: 'Roboto', sans-serif;
+    box-shadow: 0 0 15px rgba(255,255,255,0.2);
+}
+
+/* ============================
+   TARJETAS (héroes, items)
+============================ */
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.card {
+    background: rgba(30, 30, 30, 0.9);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    padding: 15px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px var(--gold-glow);
+}
+
+.card h3 {
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.card p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.card .card-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ============================
+   SELECCIONABLE
+============================ */
+.card.selectable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.card.selectable.selected {
+    border-color: var(--gold);
+    box-shadow: 0 0 12px var(--gold-glow);
+    background: rgba(241, 196, 15, 0.08);
+}
+
+/* ============================
+   BARRA NAV SIMPLE
+============================ */
+.topbar {
+    width: 100%;
+    background: rgba(15, 15, 15, 0.95);
+    border-bottom: 1px solid var(--panel-border);
+    padding: 12px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.topbar .brand {
+    font-family: 'Cinzel', serif;
+    color: var(--gold);
+    font-size: 18px;
+    text-decoration: none;
+}
+
+.topbar .nav-links {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.topbar .nav-links a,
+.topbar .nav-links button {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.topbar .nav-links a:hover,
+.topbar .nav-links button:hover {
+    color: var(--gold);
+}
+
+.topbar .user-name {
+    color: var(--gold);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ============================
+   SECCIONES DASHBOARD
+============================ */
+.section {
+    margin-bottom: 30px;
+}
+
+.section-title {
+    font-size: 18px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section-title i {
+    color: var(--gold);
+}
+
+/* ============================
+   GAME PANEL
+============================ */
+.game-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.game-info .info-item {
+    background: rgba(30, 30, 30, 0.6);
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.game-info .info-item .label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.game-info .info-item .value {
+    font-size: 16px;
+    color: var(--gold);
+    font-family: 'Cinzel', serif;
+    margin-top: 4px;
+}
+
+/* Heroes bar in game */
+.heroes-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.hero-badge {
+    background: rgba(30, 30, 30, 0.9);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 120px;
+}
+
+.hero-badge .hero-name {
+    color: var(--gold);
+    font-weight: 500;
+}
+
+.hero-badge .hero-hp {
+    font-size: 11px;
+    color: var(--success);
+}
+
+.hero-badge .hero-hp.dead {
+    color: var(--danger);
+}
+
+/* Encounter display */
+.encounter-box {
+    background: rgba(30, 30, 30, 0.9);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin: 15px 0;
+    text-align: center;
+}
+
+.encounter-box h3 {
+    margin-bottom: 8px;
+}
+
+.encounter-box p {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.encounter-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Result message */
+.result-box {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: var(--radius);
+    border: 1px solid var(--panel-border);
+    background: rgba(30, 30, 30, 0.9);
+    text-align: center;
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* Loading spinner */
+.loading {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 20px;
+}
+
+.loading::after {
+    content: '⏳';
+    animation: pulse 1s infinite;
+}
+
+/* ============================
+   UTILIDADES
+============================ */
+.text-center { text-align: center; }
+.mt-10 { margin-top: 10px; }
+.mt-20 { margin-top: 20px; }
+.mb-10 { margin-bottom: 10px; }
+.hidden { display: none !important; }
+
+/* ============================
+   ANIMACIONES
+============================ */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}

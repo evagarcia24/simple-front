@@ -1,0 +1,33 @@
+Para arrancarlo en otro PC se necesitan dos requisitos y dos comandos:
+
+Requisitos previos
+Java 21+ (para el backend)
+Python 3 (para servir el frontend) — o Node.js si prefieren
+Pasos
+Terminal 1 — Backend:
+
+bash
+cd c:\dev\Antigravity\simple-back
+.\mvnw spring-boot:run
+También necesitan una base de datos Oracle XE corriendo con el schema configurado.
+
+Terminal 2 — Frontend:
+
+bash
+cd c:\dev\Antigravity\simple-front
+python -m http.server 5500
+Abrir en navegador: http://localhost:5500
+
+⚠️ Si el frontend corre en un PC distinto al backend
+Hay que cambiar una línea en 
+simple-front/js/api.js
+:
+
+javascript
+// Cambiar esto:
+const API_BASE = 'http://localhost:8084/api';
+// Por la IP del PC donde corre el backend:
+const API_BASE = 'http://192.168.1.XXX:8084/api';
+Y añadir esa IP en 
+CorsConfig.java
+ del backend en la lista de allowedOrigins.
