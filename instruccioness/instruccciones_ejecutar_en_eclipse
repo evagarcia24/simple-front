@@ -1,0 +1,23 @@
+Copia los archivos de simple-front dentro del backend:
+
+simple-back/src/main/resources/static/
+├── css/styles.css
+├── js/api.js
+├── index.html
+├── login.html
+├── register.html
+├── dashboard.html
+└── game.html
+Una vez copiados ahí, solo tienes que cambiar una línea en 
+js/api.js
+:
+
+javascript
+// Cambiar esto:
+const API_BASE = 'http://localhost:8084/api';
+// Por esto (ya está en el mismo servidor):
+const API_BASE = '/api';
+Resultado
+En Eclipse: Run As → Spring Boot App sobre simple-back
+Abre http://localhost:8084 en el navegador
+Todo funciona desde un solo sitio, sin necesidad de Python ni Node.js
